@@ -9,6 +9,7 @@ Ever spent hours creating monthly time reports? Not anymore! Hourglass is your t
 - Transforms boring time entries into beautiful charts
 - Makes your monthly reporting actually fun (yes, really!)
 - Saves you from Excel formula nightmares
+- Calculates earnings in both USD and DOP currencies
 
 ## Features 🎯
 
@@ -17,42 +18,103 @@ Ever spent hours creating monthly time reports? Not anymore! Hourglass is your t
 - One-click PDF report generation
 - Instant project time summaries
 - Seamless Clockify API integration
+- Multi-currency earnings calculation (USD & DOP)
+- Customizable billing periods
+- Project time distribution visualization
+- Daily hours tracking
 
 ## Setup 🛠️
+
+### Local Development
 
 1. Clone this repository
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Create a `.env` file in the root directory and add your Clockify API key:
-   ```
-   VITE_CLOCKIFY_API_KEY=your_api_key_here
-   ```
+
 4. Start the development server:
    ```bash
    npm run dev
    ```
 
-## Getting Your Clockify API Key 🔑
+### Docker Deployment
 
-1. Log in to your Clockify account
-2. Go to Profile Settings
-3. Generate an API key
-4. Copy the API key and paste it in your `.env` file
+1. Build and run with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+   This will start the application on port 80.
 
-## Environment Variables 🌳
+2. Or build and run manually:
+   ```bash
+   docker build -t hourglass .
+   docker run -p 80:80 hourglass
+   ```
 
-- `VITE_CLOCKIFY_API_KEY`: Your Clockify API key (required for fetching your time entries)
+## Testing 🧪
+
+The project uses Vitest and React Testing Library for testing. Available test commands:
+
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+```
+
+## Billing Periods Configuration 📅
+
+Billing periods are configured in `src/config/billingPeriods.js`. To update the billing periods:
+
+1. Change the `BILLING_YEAR` constant to update all billing periods at once
+2. Each billing period contains:
+   - id: unique identifier (e.g., 'jan-2025')
+   - month: display name
+   - billableDays: number of billable days
+   - startDate: period start date
+   - endDate: period end date
+
+
+## Profile Configuration 👤
+
+Configure your profile settings in the app:
+- Add your Clockify API Key
+- Set your name
+- Configure hourly rate in USD
+- Set USD to DOP conversion rate for earnings calculation
 
 ## Technologies Used 💻
 
-- React
+- React 18
 - Vite
 - Material-UI
-- Axios
-- date-fns
-- React DatePicker
+- Vitest & React Testing Library
 - Chart.js
+- date-fns
+- Axios
 - jsPDF
+- Docker & Nginx
 
+## Development Commands 🛠
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint code
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+```
