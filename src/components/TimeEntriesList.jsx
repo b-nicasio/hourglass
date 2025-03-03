@@ -434,7 +434,7 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
                 boxShadow: '0px 2px 6px rgba(0, 113, 227, 0.2)',
               }}
             >
-              {downloading ? 'Generating PDF...' : 'Download Clockify PDF Report'}
+              {downloading ? 'Generating PDF...' : 'Download PDF Report'}
             </Button>
           </Stack>
         </Box>

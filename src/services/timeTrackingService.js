@@ -459,7 +459,8 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
     footStyles: {
       fillColor: [245, 245, 245],
       fontSize: styles.fonts.normal.size,
-      fontStyle: styles.fonts.heading.style
+      fontStyle: styles.fonts.heading.style,
+      textColor: [0, 0, 0]
     },
     alternateRowStyles: {
       fillColor: [250, 250, 250]
@@ -565,7 +566,8 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
       footStyles: {
         fillColor: [245, 245, 245],
         fontSize: styles.fonts.normal.size,
-        fontStyle: styles.fonts.heading.style
+        fontStyle: styles.fonts.heading.style,
+        textColor: [0, 0, 0]
       },
       columnStyles: {
         0: { cellWidth: 40 },
