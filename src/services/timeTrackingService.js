@@ -242,7 +242,7 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
       } else {
         doc.text(`Date Range: ${startDate} - ${endDate}`, 20, yPos + 40)
       }
-    } catch (error) {
+    } catch {
       // Fallback if date formatting fails
       doc.text(`Date Range: ${startDate} - ${endDate}`, 20, yPos + 40)
     }
@@ -307,7 +307,7 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
           if (!acc[dateStr]) acc[dateStr] = 0
           acc[dateStr] += entry.duration / 3600000 // Convert to hours
           return acc
-        } catch (error) {
+        } catch {
           return acc
         }
       }, {})
@@ -393,8 +393,8 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
       dailyHoursChart.destroy()
 
       return { dailyHoursImage }
-    } catch (error) {
-      console.error('Error generating charts:', error)
+    } catch {
+      console.error('Error generating charts')
 
       // Clean up on error
       if (document.body.contains(dailyHoursCanvas)) {
@@ -510,7 +510,7 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
         acc[date] = []
       }
       acc[date].push(entry)
-    } catch (error) {
+    } catch {
       // If any error occurs during date processing, use a fallback category
       const fallbackDate = 'Error Processing Date'
       if (!acc[fallbackDate]) {
@@ -629,7 +629,7 @@ const generatePDFReport = async (timeEntries, userName, periodName, startDate, e
     summaryItems.forEach((item, index) => {
       doc.text(item, 30, 120 + (index * 12))
     })
-  } catch (error) {
+  } catch {
     // Fallback if there's an error
     const summaryItems = [
       `Average Hours per Day: ${avgHoursPerDay}h`,

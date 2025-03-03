@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { Container, CssBaseline, Box, Typography, Alert, Grid, IconButton, Tooltip, Button, Paper, TextField, Divider } from '@mui/material'
+import { Container, CssBaseline, Box, Typography, Alert, Grid, IconButton, Tooltip, Button, Paper, TextField, Divider, CircularProgress } from '@mui/material'
 import DateRangePicker from './components/DateRangePicker'
 import TimeEntriesList from './components/TimeEntriesList'
 import TimeStats from './components/TimeStats'
@@ -237,138 +237,208 @@ const theme = createTheme({
 })
 
 function App() {
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(1)), // First day of current month
-    endDate: new Date(), // Today
-  })
-  const [timeEntries, setTimeEntries] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [apiKey, setApiKey] = useState(localStorage.getItem('apiKey') || '')
   const [userInfo, setUserInfo] = useState(null)
   const [workspace, setWorkspace] = useState(null)
-  const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('clockifyApiKey') || '')
-  const [apiKey, setApiKey] = useState('')
-  const [initializing, setInitializing] = useState(true)
-  const [expectedHours, setExpectedHours] = useState(null)
+  const [_projects, _setProjects] = useState([])
+  const [timeEntries, setTimeEntries] = useState([])
+  const [billableDays, setBillableDays] = useState(0)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(),
+    endDate: new Date()
+  })
+  const [showProfile, setShowProfile] = useState(false)
+  const [_showInitialProfile, setShowInitialProfile] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(null)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [profile, setProfile] = useState(null)
-  const [showInitialProfile, setShowInitialProfile] = useState(true)
+  const [userAuth, setUserAuth] = useState(null)
+
+  const fetchTimeEntries = useCallback(async (startStr, endStr) => {
+    if (!apiKey || !userAuth || !workspace) {
+      setError('Please set up your API key and workspace first')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      const entries = await timeTrackingService.getTimeEntries(
+        workspace.id,
+        userAuth.id,
+        startStr,
+        endStr,
+        apiKey
+      )
+      setTimeEntries(entries)
+    } catch (error) {
+      setError('Failed to fetch time entries. Please try again.')
+      console.error('Error fetching time entries:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [apiKey, userAuth, workspace, setError, setLoading, setTimeEntries])
 
   useEffect(() => {
     const initializeApp = async () => {
-      const savedApiKey = localStorage.getItem('clockifyApiKey')
+      setInitialLoading(true);
+      const savedApiKey = localStorage.getItem('apiKey');
+      const savedProfile = localStorage.getItem('hourglassProfile');
+
+      // Process API key and profile together to avoid multiple re-renders
       if (savedApiKey) {
-        setApiKey(savedApiKey)
-        setApiKeyInput(savedApiKey)
+        setApiKey(savedApiKey);
+
         try {
-          setError(null)
-          const user = await timeTrackingService.getUserInfo(savedApiKey)
-          setUserInfo(user)
-          const ws = await timeTrackingService.getWorkspace(savedApiKey)
-          setWorkspace(ws)
+          setError(null);
+          // Perform API calls in parallel
+          const [user, ws] = await Promise.all([
+            timeTrackingService.getUserInfo(savedApiKey),
+            timeTrackingService.getWorkspace(savedApiKey)
+          ]);
+
+          // Set userAuth for API calls
+          setUserAuth({
+            id: user.id,
+            name: user.name
+          });
+
+          // Set userInfo for display
+          setUserInfo(user);
+          setWorkspace(ws);
+
+          // Set profile if available
+          if (savedProfile) {
+            setProfile(JSON.parse(savedProfile));
+          }
+
+          // Don't show profile dialog if we have valid data
+          setShowProfile(false);
         } catch (error) {
-          console.error('Initialization error:', error)
-          setError('Failed to initialize app. Please check your API key.')
-          setUserInfo(null)
-          setWorkspace(null)
+          console.error('Initialization error:', error);
+          setError('Failed to initialize app. Please check your API key.');
+
+          // Reset state
+          setUserAuth(null);
+          setUserInfo(null);
+          setWorkspace(null);
+          setProfile(null);
+
+          // Show profile dialog only if API key is invalid
+          setShowProfile(true);
         }
+      } else {
+        // Show profile setup if no API key is found
+        setShowProfile(true);
       }
-      setInitializing(false)
-    }
-    initializeApp()
-  }, [])
+      setInitialLoading(false);
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
-    const savedProfile = localStorage.getItem('hourglassProfile')
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile))
+    if (apiKey && dateRange && userAuth && workspace) {
+      const startStr = format(dateRange.startDate, 'yyyy-MM-dd')
+      const endStr = format(dateRange.endDate, 'yyyy-MM-dd')
+      fetchTimeEntries(startStr, endStr)
     }
-  }, [])
+  }, [apiKey, dateRange, userAuth, workspace, fetchTimeEntries])
 
-  useEffect(() => {
-    if (apiKey && dateRange && userInfo && workspace) {
-      setLoading(true)
-      setError('')
-      const fetchData = async () => {
-        try {
-          const entries = await timeTrackingService.getTimeEntries(
-            workspace.id,
-            userInfo.id,
-            format(dateRange.startDate, 'yyyy-MM-dd'),
-            format(dateRange.endDate, 'yyyy-MM-dd'),
-            apiKey
-          )
-          setTimeEntries(entries)
-        } catch (error) {
-          setError('Failed to fetch time entries. Please try again.')
-          console.error('Error fetching time entries:', error)
-        } finally {
-          setLoading(false)
-        }
-      }
-      fetchData()
+  const handleApiKeySubmit = async (newApiKey) => {
+    if (!newApiKey) return;
+
+    // Don't use full-page loading for this operation
+    setApiKey(newApiKey);
+    localStorage.setItem('apiKey', newApiKey);
+
+    try {
+      setError(null);
+      // Execute API calls in parallel
+      const [user, ws] = await Promise.all([
+        timeTrackingService.getUserInfo(newApiKey),
+        timeTrackingService.getWorkspace(newApiKey)
+      ]);
+
+      // Update state only after both calls complete successfully
+      setUserAuth({
+        id: user.id,
+        name: user.name
+      });
+      setUserInfo(user);
+      setWorkspace(ws);
+    } catch (error) {
+      console.error('Initialization error:', error);
+      setError('Failed to initialize app. Please check your API key.');
+      setUserAuth(null);
+      setUserInfo(null);
+      setWorkspace(null);
     }
-  }, [apiKey, dateRange, userInfo, workspace])
+  };
 
-  const handleApiKeySubmit = (newApiKey) => {
-    setApiKeyInput(newApiKey)
-  }
-
+  // eslint-disable-next-line no-unused-vars
   const handleSaveSettings = async () => {
-    if (apiKeyInput && profile?.name && profile?.hourlyRate && profile?.usdToDopRate) {
+    if (apiKey && userInfo && workspace) {
       setError(null)
-      setInitializing(true)
       try {
-        const user = await timeTrackingService.getUserInfo(apiKeyInput)
-        const ws = await timeTrackingService.getWorkspace(apiKeyInput)
-        setUserInfo(user)
+        const ws = await timeTrackingService.getWorkspace(apiKey)
         setWorkspace(ws)
-        setApiKey(apiKeyInput)
-        localStorage.setItem('clockifyApiKey', apiKeyInput)
-        localStorage.setItem('hourglassProfile', JSON.stringify(profile))
+        localStorage.setItem('apiKey', apiKey)
+        localStorage.setItem('hourglassProfile', JSON.stringify(userInfo))
       } catch (error) {
-        console.error('Initialization error:', error)
-        setError('Failed to initialize app. Please check your API key.')
-        setUserInfo(null)
-        setWorkspace(null)
-        setApiKey('')
+        console.error('Error saving settings:', error)
+        setError('Failed to save settings. Please try again.')
       }
-      setInitializing(false)
     }
   }
 
   const handleResetApiKey = () => {
-    localStorage.removeItem('clockifyApiKey')
+    localStorage.removeItem('apiKey')
     setApiKey('')
     setUserInfo(null)
     setWorkspace(null)
     setTimeEntries([])
+    setProfile(null)
   }
 
   const handleProfileClose = (updatedProfile) => {
+    // Only update profile information, not authentication info
     if (updatedProfile) {
-      setProfile(updatedProfile)
+      setProfile(updatedProfile);
+
+      // Only update userInfo display properties, not the id used for API calls
+      setUserInfo(prevUserInfo => {
+        if (!prevUserInfo) return updatedProfile;
+        return {
+          ...prevUserInfo,
+          hourlyRate: updatedProfile.hourlyRate,
+          usdToDopRate: updatedProfile.usdToDopRate
+        };
+      });
     }
-    setProfileOpen(false)
-    setShowInitialProfile(false)
-  }
+
+    // Always close the profile dialog
+    setShowProfile(false);
+    setShowInitialProfile(false);
+  };
 
   const handleDateRangeSelect = (newRange, billableDays, month) => {
     setDateRange(newRange)
-    setExpectedHours(billableDays * 8) // 8 hours per billable day
+    setBillableDays(billableDays)
     setSelectedMonth(month)
   }
 
   const handleDownloadReport = async (startDate, endDate, periodName) => {
-    if (!userInfo || !workspace) {
-      setError('App not properly initialized. Please check your API key.')
+    if (!userAuth || !workspace) {
+      setError('Please set up your profile and workspace first')
       return
     }
 
     try {
-      // Ensure we have valid dates
-      let startStr, endStr;
+      let startStr;
+      let endStr;
 
       try {
         // Check if startDate is a string or Date object
@@ -404,10 +474,10 @@ function App() {
 
       await timeTrackingService.downloadReport(
         workspace.id,
-        userInfo.id,
+        userAuth.id,
         startStr,
         endStr,
-        userInfo.name,
+        userAuth.name,
         periodName,
         apiKey
       )
@@ -417,12 +487,8 @@ function App() {
     }
   }
 
-  // Show loading state while checking API key
-  if (initializing) {
-    return null // Or a loading spinner if you prefer
-  }
-
-  if (!apiKey || !userInfo || !workspace || !profile?.name || !profile?.hourlyRate || !profile?.usdToDopRate) {
+  // Show loading indicator while initializing the app for the first time
+  if (initialLoading) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -430,174 +496,40 @@ function App() {
           sx={{
             minHeight: '100vh',
             backgroundColor: theme.palette.background.default,
-            py: 3,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            py: 4
           }}
         >
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: '360px',
-              mx: 'auto',
-              px: 2
-            }}
-          >
-            <Box sx={{
-              textAlign: 'center',
-              mb: 4,
-              mt: { xs: 2, sm: 4 }
-            }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1.5,
-                  mb: 2
-                }}
-              >
-                <HourglassEmptyIcon
-                  sx={{
-                    fontSize: '2.25rem',
-                    color: theme.palette.primary.main,
-                    animation: 'flip 2s infinite',
-                    '@keyframes flip': {
-                      '0%': {
-                        transform: 'rotate(0deg)',
-                      },
-                      '100%': {
-                        transform: 'rotate(180deg)',
-                      },
-                    },
-                  }}
-                />
-                <Typography variant="h3" component="h1" sx={{ fontSize: '1.75rem' }}>
-                  Welcome to Hourglass
-                </Typography>
-              </Box>
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                gutterBottom
-                sx={{
-                  mb: 1.5,
-                  fontSize: '0.875rem',
-                  fontWeight: 500
-                }}
-              >
-                Let's get you set up to track your time and earnings
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ maxWidth: '320px', mx: 'auto', mb: 3, fontSize: '0.875rem' }}
-              >
-                Hourglass helps you monitor your work hours, track project distributions,
-                and calculate earnings in both USD and DOP.
-              </Typography>
-            </Box>
-
-            <Paper
-              sx={{
-                p: 2.5,
-                borderRadius: 2,
-                boxShadow: theme.shadows[1],
-                backgroundColor: 'white',
-                width: '100%'
-              }}
-            >
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                  Profile Settings
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                  Enter your Clockify API key and profile information to get started.
-                </Typography>
-              </Box>
-
-              <Box>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Clockify API Key"
-                  value={apiKeyInput}
-                  onChange={(e) => handleApiKeySubmit(e.target.value)}
-                  margin="normal"
-                  type="password"
-                  helperText="Enter your Clockify API key to connect your account"
-                  sx={{ '& .MuiFormHelperText-root': { fontSize: '0.75rem' } }}
-                />
-
-                <Divider sx={{ my: 2 }} />
-
-                <Typography variant="h6" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                  Earnings Settings
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                  These settings will be used to calculate your earnings.
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Your Name"
-                  value={profile?.name || ''}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  margin="normal"
-                />
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Hourly Rate (USD)"
-                  type="number"
-                  value={profile?.hourlyRate || ''}
-                  onChange={(e) => setProfile({ ...profile, hourlyRate: e.target.value })}
-                  margin="normal"
-                  InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1, fontSize: '0.75rem' }}>$</Typography>
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="USD to DOP Rate"
-                  type="number"
-                  value={profile?.usdToDopRate || ''}
-                  onChange={(e) => setProfile({ ...profile, usdToDopRate: e.target.value })}
-                  margin="normal"
-                  InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1, fontSize: '0.75rem' }}>RD$</Typography>
-                  }}
-                />
-
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', gap: 1.5 }}>
-                  <Button
-                    onClick={handleResetApiKey}
-                    color="error"
-                    startIcon={<DeleteIcon sx={{ fontSize: 18 }} />}
-                    variant="outlined"
-                    size="small"
-                    sx={{ fontSize: '0.75rem' }}
-                  >
-                    Reset Settings
-                  </Button>
-                  <Button
-                    onClick={handleSaveSettings}
-                    variant="contained"
-                    size="small"
-                    sx={{ fontSize: '0.75rem' }}
-                    disabled={!apiKeyInput || !profile?.name || !profile?.hourlyRate || !profile?.usdToDopRate}
-                  >
-                    Save Settings
-                  </Button>
-                </Box>
-              </Box>
-            </Paper>
-          </Box>
+          <CircularProgress />
         </Box>
       </ThemeProvider>
-    )
+    );
+  }
+
+  // Show initialization screen when no data is available
+  if ((!apiKey || !userAuth || !workspace) && !loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            minHeight: '100vh',
+            backgroundColor: theme.palette.background.default
+          }}
+        >
+          {/* No content needed here, just auto-open the profile dialog */}
+          <Profile
+            open={true} // Always open when initializing
+            onClose={handleProfileClose}
+            apiKey={apiKey}
+            onApiKeyChange={handleApiKeySubmit}
+            onResetApiKey={handleResetApiKey}
+          />
+        </Box>
+      </ThemeProvider>
+    );
   }
 
   return (
@@ -623,7 +555,7 @@ function App() {
             <Header
               userInfo={userInfo}
               workspace={workspace}
-              onProfileClick={() => setProfileOpen(true)}
+              onProfileClick={() => setShowProfile(true)}
             />
           </Box>
 
@@ -650,8 +582,12 @@ function App() {
                 dateRange={dateRange}
                 setDateRange={(newRange) => {
                   setDateRange(newRange)
-                  setExpectedHours(null)
+                  setBillableDays(0)
                 }}
+                onFetch={(startStr, endStr) => {
+                  fetchTimeEntries(startStr, endStr)
+                }}
+                loading={loading}
               />
 
               {error && (
@@ -662,7 +598,7 @@ function App() {
 
               <TimeStats
                 timeEntries={timeEntries}
-                expectedHours={expectedHours}
+                expectedHours={billableDays * 8}
                 profile={profile}
               />
 
@@ -692,8 +628,9 @@ function App() {
         </Container>
       </Box>
 
+      {/* Profile dialog - only shown when explicitly requested */}
       <Profile
-        open={profileOpen}
+        open={showProfile}
         onClose={handleProfileClose}
         apiKey={apiKey}
         onApiKeyChange={handleApiKeySubmit}

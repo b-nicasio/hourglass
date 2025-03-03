@@ -154,9 +154,10 @@ function ProjectRow({ project, entries }) {
 }
 
 function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, selectedMonth }) {
-  const theme = useTheme()
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [showGraphs, setShowGraphs] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const theme = useTheme()
 
   const groupedEntries = useMemo(() => {
     const groups = timeEntries.reduce((acc, entry) => {
@@ -197,14 +198,29 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
 
   if (loading) {
     return (
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '400px'
-      }}>
-        <CircularProgress size={60} />
-      </Box>
+      <Paper
+        elevation={2}
+        sx={{
+          p: 4,
+          textAlign: 'center',
+          backgroundColor: theme.palette.background.paper,
+          borderRadius: 2
+        }}
+      >
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px',
+          gap: 2
+        }}>
+          <CircularProgress size={40} />
+          <Typography variant="body1" color="text.secondary">
+            Loading time entries...
+          </Typography>
+        </Box>
+      </Paper>
     )
   }
 
@@ -305,8 +321,9 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
             <Button
               variant="contained"
               size="medium"
-              startIcon={<FileDownloadIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-              onClick={() => {
+              startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <FileDownloadIcon />}
+              disabled={downloading}
+              onClick={async () => {
                 try {
                   // Ensure we have valid dates
                   if (!dateRange || !dateRange.startDate || !dateRange.endDate) {
@@ -324,13 +341,16 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
                     return;
                   }
 
+                  setDownloading(true);
                   const startStr = format(startDate, 'yyyy-MM-dd');
                   const endStr = format(endDate, 'yyyy-MM-dd');
                   const periodName = `${selectedMonth || 'Custom Period'} ${BILLING_YEAR || new Date().getFullYear()}`;
 
-                  onDownloadReport(startStr, endStr, periodName);
+                  await onDownloadReport(startStr, endStr, periodName);
                 } catch (error) {
-                  console.error('Error preparing PDF download:', error);
+                  console.error("Error preparing download:", error);
+                } finally {
+                  setDownloading(false);
                 }
               }}
               sx={{
@@ -340,7 +360,7 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
                 py: { xs: 1, sm: 1.25 }
               }}
             >
-              Download Clockify PDF Report
+              {downloading ? 'Generating PDF...' : 'Download Clockify PDF Report'}
             </Button>
           </Stack>
         </Box>

@@ -22,7 +22,6 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import PaidIcon from '@mui/icons-material/Paid'
 
 const defaultProfile = {
-  name: '',
   hourlyRate: '',
   usdToDopRate: ''
 }
@@ -32,6 +31,8 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
   const [profile, setProfile] = useState(defaultProfile)
   const [newApiKey, setNewApiKey] = useState(apiKey || '')
   const [error, setError] = useState(null)
+  const isInitialSetup = !apiKey
+  const isProfileComplete = profile.hourlyRate && profile.usdToDopRate && newApiKey
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('hourglassProfile')
@@ -59,9 +60,25 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
     onClose(updatedProfile)
   }
 
+  const handleGetStarted = () => {
+    // Save profile and API key
+    const updatedProfile = {
+      ...profile,
+      hourlyRate: Number(profile.hourlyRate),
+      usdToDopRate: Number(profile.usdToDopRate)
+    }
+    localStorage.setItem('hourglassProfile', JSON.stringify(updatedProfile))
+
+    // Set API key and close dialog
+    onApiKeyChange(newApiKey)
+
+    // Close dialog
+    onClose(updatedProfile)
+  }
+
   const handleResetProfile = () => {
     localStorage.removeItem('hourglassProfile')
-    localStorage.removeItem('clockifyApiKey')
+    localStorage.removeItem('apiKey')
     onResetApiKey()
     setProfile(defaultProfile)
     setNewApiKey('')
@@ -69,8 +86,6 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
     onClose(null)
     window.location.reload()
   }
-
-  const isProfileComplete = profile.name && profile.hourlyRate && profile.usdToDopRate && newApiKey
 
   const SectionTitle = ({ icon, title, subtitle }) => (
     <Box sx={{ mb: 3 }}>
@@ -91,7 +106,7 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
   return (
     <Dialog
       open={open}
-      onClose={() => onClose(null)}
+      onClose={isInitialSetup ? undefined : () => onClose(null)}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -104,21 +119,23 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
       <DialogTitle sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h5" sx={{ fontWeight: 600, fontSize: '1.25rem' }}>
-            Profile Settings
+            {isInitialSetup ? 'Welcome to Hourglass' : 'Profile Settings'}
           </Typography>
-          <IconButton
-            onClick={() => onClose(null)}
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                backgroundColor: theme.palette.error.main + '10',
-                color: 'error.main'
-              }
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          {!isInitialSetup && (
+            <IconButton
+              onClick={() => onClose(null)}
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: theme.palette.error.main + '10',
+                  color: 'error.main'
+                }
+              }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
       </DialogTitle>
 
@@ -175,18 +192,6 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
               <TextField
                 fullWidth
                 size="small"
-                label="Your Name"
-                value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'background.paper'
-                  }
-                }}
-              />
-              <TextField
-                fullWidth
-                size="small"
                 label="Hourly Rate (USD)"
                 type="number"
                 value={profile.hourlyRate}
@@ -235,39 +240,28 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
 
       <DialogActions sx={{ px: 3, py: 2.5, borderTop: `1px solid ${theme.palette.divider}` }}>
         <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+          {!isInitialSetup && (
+            <Button
+              onClick={handleResetProfile}
+              color="error"
+              startIcon={<DeleteIcon />}
+              variant="outlined"
+              size="small"
+              sx={{
+                borderRadius: '6px',
+                textTransform: 'none',
+                fontSize: '0.875rem'
+              }}
+            >
+              Reset All Settings
+            </Button>
+          )}
+          <Box sx={{ flexGrow: 1 }} />
           <Button
-            onClick={handleResetProfile}
-            color="error"
-            startIcon={<DeleteIcon />}
-            variant="outlined"
-            size="small"
-            sx={{
-              borderRadius: '6px',
-              textTransform: 'none',
-              fontSize: '0.875rem'
-            }}
-          >
-            Reset All Settings
-          </Button>
-          <Box sx={{ flex: 1 }} />
-          <Button
-            onClick={() => onClose(null)}
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              fontSize: '0.875rem',
-              '&:hover': {
-                backgroundColor: theme.palette.grey[100]
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
+            onClick={isInitialSetup ? handleGetStarted : handleSave}
+            color="primary"
             variant="contained"
             disabled={!isProfileComplete}
-            size="small"
             sx={{
               borderRadius: '6px',
               textTransform: 'none',
@@ -275,7 +269,7 @@ function Profile({ open, onClose, apiKey, onApiKeyChange, onResetApiKey }) {
               px: 3
             }}
           >
-            Save Changes
+            {isInitialSetup ? 'Get Started' : 'Save Changes'}
           </Button>
         </Stack>
       </DialogActions>
