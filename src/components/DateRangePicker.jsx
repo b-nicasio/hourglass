@@ -1,5 +1,5 @@
 import React, { useEffect, forwardRef } from 'react'
-import { Paper, Button, Box, useTheme } from '@mui/material'
+import { Paper, Button, Box, useTheme, CircularProgress } from '@mui/material'
 import ReactDatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { format } from 'date-fns'
@@ -53,7 +53,7 @@ const datePickerCustomStyles = `
   }
 `
 
-function DateRangePicker({ dateRange, setDateRange, onFetch }) {
+function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
   const theme = useTheme()
 
   const handleFetch = () => {
@@ -121,6 +121,7 @@ function DateRangePicker({ dateRange, setDateRange, onFetch }) {
           dateFormat="MMM dd, yyyy"
           placeholderText="Start Date"
           customInput={<CustomInput />}
+          disabled={loading}
         />
         <ReactDatePicker
           selected={dateRange.endDate}
@@ -132,11 +133,13 @@ function DateRangePicker({ dateRange, setDateRange, onFetch }) {
           dateFormat="MMM dd, yyyy"
           placeholderText="End Date"
           customInput={<CustomInput />}
+          disabled={loading}
         />
       </Box>
       <Button
         variant="contained"
         onClick={handleFetch}
+        disabled={loading}
         sx={{
           height: '100%',
           minWidth: { xs: '100%', sm: '200px' },
@@ -148,9 +151,9 @@ function DateRangePicker({ dateRange, setDateRange, onFetch }) {
             backgroundColor: theme.palette.primary.dark,
           },
         }}
-        startIcon={<SearchIcon />}
+        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
       >
-        Fetch Time Entries
+        {loading ? 'Loading...' : 'Fetch Time Entries'}
       </Button>
     </Paper>
   )
