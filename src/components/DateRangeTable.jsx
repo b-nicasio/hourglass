@@ -1,19 +1,19 @@
 import React from 'react'
 import {
   Paper,
+  Typography,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
-  useTheme,
-  Box
+  Box,
+  useTheme
 } from '@mui/material'
-import { format } from 'date-fns'
 import { billingPeriods, getBillingYear } from '../config/billingPeriods'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
+import { format } from 'date-fns'
 
 function DateRangeTable({ onSelectRange }) {
   const theme = useTheme()
@@ -23,13 +23,18 @@ function DateRangeTable({ onSelectRange }) {
       elevation={2}
       sx={{
         width: '100%',
-        mb: 3,
-        borderRadius: 2,
         overflow: 'hidden',
-        border: `1px solid ${theme.palette.divider}`,
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          boxShadow: theme.shadows[4]
+        borderRadius: 2,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '150px',
+          height: '150px',
+          background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+          zIndex: 0,
         }
       }}
     >
@@ -41,7 +46,9 @@ function DateRangeTable({ onSelectRange }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 1
+          gap: 1,
+          position: 'relative',
+          zIndex: 1
         }}
       >
         <CalendarTodayIcon color="primary" />
@@ -71,11 +78,13 @@ function DateRangeTable({ onSelectRange }) {
           },
           '&::-webkit-scrollbar-thumb': {
             backgroundColor: theme.palette.primary.main,
-            borderRadius: '4px',
+            borderRadius: 1,
             '&:hover': {
-              backgroundColor: theme.palette.primary.dark,
-            },
+              backgroundColor: theme.palette.primary.dark
+            }
           },
+          position: 'relative',
+          zIndex: 1,
           '& .MuiTable-root': {
             minWidth: '460px',
             width: '100%'
@@ -140,14 +149,14 @@ function DateRangeTable({ onSelectRange }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {billingPeriods.map((range) => (
+            {billingPeriods.map((period) => (
               <TableRow
-                key={range.id}
+                key={period.id}
                 hover
                 onClick={() => onSelectRange(
-                  { startDate: range.startDate, endDate: range.endDate },
-                  range.billableDays,
-                  range.month
+                  { startDate: period.startDate, endDate: period.endDate },
+                  period.billableDays,
+                  period.month
                 )}
                 sx={{
                   cursor: 'pointer',
@@ -178,7 +187,7 @@ function DateRangeTable({ onSelectRange }) {
                     textAlign: 'center'
                   }}
                 >
-                  {range.month}
+                  {period.month}
                 </TableCell>
                 <TableCell
                   sx={{
@@ -189,7 +198,7 @@ function DateRangeTable({ onSelectRange }) {
                     textAlign: 'center'
                   }}
                 >
-                  {range.billableDays}
+                  {period.billableDays}
                 </TableCell>
                 <TableCell
                   sx={{
@@ -202,7 +211,7 @@ function DateRangeTable({ onSelectRange }) {
                     textAlign: 'center'
                   }}
                 >
-                  {range.billableDays * 8}h
+                  {period.billableDays * 8}h
                 </TableCell>
                 <TableCell
                   sx={{
@@ -216,7 +225,7 @@ function DateRangeTable({ onSelectRange }) {
                     textAlign: 'center'
                   }}
                 >
-                  {format(range.startDate, 'MMM d')} - {format(range.endDate, 'MMM d')}
+                  {format(period.startDate, 'MMM d')} - {format(period.endDate, 'MMM d')}
                 </TableCell>
               </TableRow>
             ))}

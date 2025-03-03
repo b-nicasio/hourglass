@@ -151,14 +151,18 @@ function DailyHoursChart({ timeEntries }) {
       sx={{
         p: 3,
         mb: 3,
-        height: '450px',
+        height: '460px',
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.shadows[2],
         transition: 'transform 0.2s, box-shadow 0.2s',
+        overflow: 'hidden',
+        borderRadius: 2,
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: theme.shadows[4]
-        }
+        },
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       <Typography
@@ -172,7 +176,12 @@ function DailyHoursChart({ timeEntries }) {
       >
         Daily Hours Distribution
       </Typography>
-      <Box sx={{ height: 'calc(100% - 40px)' }}>
+      <Box sx={{
+        flex: 1,
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
         <Bar data={data} options={options} />
       </Box>
     </Paper>

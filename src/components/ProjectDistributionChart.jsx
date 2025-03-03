@@ -104,10 +104,12 @@ function ProjectDistributionChart({ timeEntries }) {
       sx={{
         p: 3,
         mb: 3,
-        height: '550px',
+        height: '460px',
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.shadows[2],
         transition: 'transform 0.2s, box-shadow 0.2s',
+        overflow: 'hidden',
+        borderRadius: 2,
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: theme.shadows[4]
@@ -119,7 +121,7 @@ function ProjectDistributionChart({ timeEntries }) {
       <Typography
         variant="h6"
         sx={{
-          mb: 3,
+          mb: 2,
           fontWeight: 600,
           color: theme.palette.text.primary,
           fontSize: '1.25rem'
@@ -130,16 +132,25 @@ function ProjectDistributionChart({ timeEntries }) {
       <Box sx={{
         flex: 1,
         width: '100%',
+        height: '100%',
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
         '& canvas': {
           maxWidth: '90% !important',
-          maxHeight: '90% !important'
+          maxHeight: '85% !important'
         }
       }}>
-        <Pie data={data} options={options} />
+        <Pie
+          data={data}
+          options={{
+            ...options,
+            maintainAspectRatio: false,
+            responsive: true
+          }}
+        />
       </Box>
     </Paper>
   )

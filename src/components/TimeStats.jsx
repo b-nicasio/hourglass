@@ -1,5 +1,5 @@
 import React from 'react'
-import { Paper, Grid, Typography, Box, IconButton, Tooltip } from '@mui/material'
+import { Paper, Grid, Typography, Box, IconButton, Tooltip, useTheme } from '@mui/material'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import QueryStatsIcon from '@mui/icons-material/QueryStats'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
@@ -7,8 +7,22 @@ import WorkIcon from '@mui/icons-material/Work'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import AssessmentIcon from '@mui/icons-material/Assessment'
 
 function StatCard({ title, value, icon, warning, status, onCopy }) {
+  const theme = useTheme();
+
+  // Determine status colors with gradients
+  const statusGradient = status ?
+    status === 'above' ? 'linear-gradient(90deg, #2e7d32 0%, #4caf50 100%)' :
+    status === 'below' ? 'linear-gradient(90deg, #d32f2f 0%, #f44336 100%)' :
+    'none' : 'none';
+
+  const statusColor = status ?
+    status === 'above' ? '#2e7d32' :
+    status === 'below' ? '#d32f2f' :
+    'transparent' : 'transparent';
+
   return (
     <Paper
       elevation={1}
@@ -19,33 +33,51 @@ function StatCard({ title, value, icon, warning, status, onCopy }) {
         flexDirection: 'column',
         position: 'relative',
         overflow: 'hidden',
-        borderLeft: status ? `4px solid ${
-          status === 'above' ? '#2e7d32' :
-          status === 'below' ? '#d32f2f' :
-          'transparent'
-        }` : 'none'
+        borderRadius: 2,
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        borderLeft: status ? `4px solid ${statusColor}` : 'none',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: theme.shadows[3],
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '80px',
+          height: '80px',
+          opacity: 0.05,
+          background: 'radial-gradient(circle, rgba(25,118,210,0.4) 0%, rgba(25,118,210,0) 70%)',
+          zIndex: 0,
+        }
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, position: 'relative', zIndex: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{
             mr: 1.5,
             display: 'flex',
             alignItems: 'center',
-            color: '#1976d2'
+            color: theme.palette.primary.main
           }}>
             {icon}
           </Box>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
             {title}
           </Typography>
         </Box>
         {onCopy && (
-          <Tooltip title={`Copy value`}>
+          <Tooltip title="Copy value">
             <IconButton
               size="small"
               onClick={onCopy}
-              sx={{ ml: 1 }}
+              sx={{
+                ml: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                }
+              }}
             >
               <ContentCopyIcon fontSize="small" />
             </IconButton>
@@ -53,7 +85,16 @@ function StatCard({ title, value, icon, warning, status, onCopy }) {
         )}
       </Box>
 
-      <Typography variant="h5" component="div" sx={{ fontWeight: 500 }}>
+      <Typography
+        variant="h5"
+        component="div"
+        sx={{
+          fontWeight: 600,
+          position: 'relative',
+          zIndex: 1,
+          color: status ? statusColor : theme.palette.text.primary
+        }}
+      >
         {value}
       </Typography>
 
@@ -61,8 +102,11 @@ function StatCard({ title, value, icon, warning, status, onCopy }) {
         <Typography
           variant="caption"
           sx={{
-            color: status === 'above' ? '#2e7d32' : '#d32f2f',
-            mt: 0.5
+            color: statusColor,
+            mt: 0.5,
+            fontWeight: 500,
+            position: 'relative',
+            zIndex: 1
           }}
         >
           {warning}
@@ -73,6 +117,8 @@ function StatCard({ title, value, icon, warning, status, onCopy }) {
 }
 
 function TimeStats({ timeEntries, expectedHours, profile }) {
+  const theme = useTheme();
+
   const calculateStats = () => {
     if (!timeEntries.length) return {
       totalHours: 0,
@@ -148,14 +194,43 @@ function TimeStats({ timeEntries, expectedHours, profile }) {
         p: 3,
         mb: 3,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        borderRadius: 2,
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '150px',
+          height: '150px',
+          background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+          zIndex: 0,
+        }
       }}
     >
-      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-        Time Stats
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2.5,
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        <AssessmentIcon sx={{ color: theme.palette.primary.main, mr: 1.5, fontSize: '1.25rem' }} />
+        <Typography
+          variant="h6"
+          component="h2"
+          sx={{
+            fontWeight: 600,
+            fontSize: '1rem'
+          }}
+        >
+          Time Statistics
+        </Typography>
+      </Box>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} sm={6} md={profile?.hourlyRate ? 2 : 3}>
           <StatCard
             title="Total Hours"
