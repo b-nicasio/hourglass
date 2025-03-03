@@ -13,11 +13,20 @@ const datePickerCustomStyles = `
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
     border: none;
     border-radius: 2px;
-    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
     position: relative;
     z-index: 10000 !important;
   }
   .react-datepicker-popper {
+    z-index: 10000 !important;
+  }
+  .react-datepicker-popper[data-placement^="bottom"] {
+    margin-top: 10px !important;
+  }
+  .react-datepicker-popper[data-placement^="top"] {
+    margin-bottom: 10px !important;
+  }
+  .date-picker-popper-start, .date-picker-popper-end {
     z-index: 10000 !important;
   }
   .react-datepicker-wrapper {
@@ -81,15 +90,19 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
     return () => document.head.removeChild(styleElement)
   }, [])
 
-  const CustomInput = forwardRef(({ value, onClick }, ref) => (
+  // Create refs for the buttons
+  const startButtonRef = React.useRef(null);
+  const endButtonRef = React.useRef(null);
+
+  const CustomInput = forwardRef(({ value, onClick, isEndDate }, ref) => (
     <Button
       variant="outlined"
       onClick={onClick}
-      ref={ref}
+      ref={isEndDate ? endButtonRef : startButtonRef}
       sx={{
         width: 'auto',
-        minWidth: '130px',
-        maxWidth: '140px',
+        minWidth: '160px',
+        maxWidth: '180px',
         justifyContent: 'space-between',
         backgroundColor: 'white',
         '&:hover': {
@@ -104,6 +117,14 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
     >
       {value}
     </Button>
+  ))
+
+  const StartDateCustomInput = forwardRef((props, ref) => (
+    <CustomInput {...props} ref={ref} isEndDate={false} />
+  ))
+
+  const EndDateCustomInput = forwardRef((props, ref) => (
+    <CustomInput {...props} ref={ref} isEndDate={true} />
   ))
 
   return (
@@ -161,7 +182,7 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
           alignItems: { xs: 'stretch', md: 'center' },
           gap: 2,
           position: 'relative',
-          zIndex: 1
+          zIndex: 5
         }}
       >
         {/* Date picker section */}
@@ -204,18 +225,34 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
                 endDate={dateRange.endDate}
                 dateFormat="MMM dd, yyyy"
                 placeholderText="Start Date"
-                customInput={<CustomInput />}
+                customInput={<StartDateCustomInput />}
                 disabled={loading}
-                popperClassName="date-picker-popper"
+                popperClassName="date-picker-popper-start"
+                popperPlacement="bottom"
                 popperModifiers={[
                   {
-                    name: 'preventOverflow',
+                    name: "offset",
                     options: {
+                      offset: [0, 10],
+                    },
+                  },
+                  {
+                    name: "preventOverflow",
+                    options: {
+                      rootBoundary: "viewport",
+                      boundary: "viewport",
                       mainAxis: true,
                       altAxis: true
                     }
+                  },
+                  {
+                    name: "flip",
+                    options: {
+                      fallbackPlacements: ["top", "top-end", "top-start"],
+                    },
                   }
                 ]}
+                portalId="date-picker-portal-start"
               />
             </Box>
 
@@ -236,18 +273,34 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
                 minDate={dateRange.startDate}
                 dateFormat="MMM dd, yyyy"
                 placeholderText="End Date"
-                customInput={<CustomInput />}
+                customInput={<EndDateCustomInput />}
                 disabled={loading}
-                popperClassName="date-picker-popper"
+                popperClassName="date-picker-popper-end"
+                popperPlacement="bottom"
                 popperModifiers={[
                   {
-                    name: 'preventOverflow',
+                    name: "offset",
                     options: {
+                      offset: [0, 10],
+                    },
+                  },
+                  {
+                    name: "preventOverflow",
+                    options: {
+                      rootBoundary: "viewport",
+                      boundary: "viewport",
                       mainAxis: true,
                       altAxis: true
                     }
+                  },
+                  {
+                    name: "flip",
+                    options: {
+                      fallbackPlacements: ["top", "top-end", "top-start"],
+                    },
                   }
                 ]}
+                portalId="date-picker-portal-end"
               />
             </Box>
           </Box>
@@ -285,6 +338,10 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
           </Button>
         </Box>
       </Box>
+
+      {/* Portals for date pickers to ensure they're rendered at the end of the document body */}
+      <div id="date-picker-portal-start" />
+      <div id="date-picker-portal-end" />
     </Paper>
   )
 }
