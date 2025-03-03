@@ -50,17 +50,16 @@ function ProjectRow({ project, entries }) {
     <>
       <TableRow
         sx={{
-          '& > *': { borderBottom: 'unset' },
-          backgroundColor: project.color + '10',
-          transition: 'all 0.2s ease-in-out',
           '&:hover': {
-            backgroundColor: project.color + '20',
+            backgroundColor: theme.palette.action.hover,
           },
-          cursor: 'pointer'
+          cursor: 'pointer',
+          transition: 'background-color 0.2s',
+          borderLeft: `4px solid ${project.color}`,
         }}
         onClick={() => setOpen(!open)}
       >
-        <TableCell padding="checkbox" sx={{ width: '48px' }}>
+        <TableCell sx={{ width: 48, p: { xs: 1, sm: 1.5 } }}>
           <IconButton
             aria-label="expand row"
             size="small"
@@ -70,75 +69,78 @@ function ProjectRow({ project, entries }) {
             }}
             sx={{
               transition: 'transform 0.2s',
-              transform: open ? 'rotate(-180deg)' : 'rotate(0)',
+              transform: open ? 'rotate(180deg)' : 'rotate(0)',
+              '&:hover': {
+                backgroundColor: 'rgba(25, 118, 210, 0.08)'
+              }
             }}
           >
-            <KeyboardArrowDownIcon />
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell
-          component="th"
-          scope="row"
-          sx={{
-            minWidth: '200px',
-            maxWidth: '300px'
-          }}
-        >
-          <Typography
-            sx={{
-              color: project.color,
-              fontWeight: 'bold',
-              fontSize: '1.1rem'
-            }}
-          >
-            {project.name}
-          </Typography>
-        </TableCell>
-        <TableCell align="center" sx={{ width: '100px' }}>{entries.length}</TableCell>
-        <TableCell align="right" sx={{ width: '150px' }}>{formattedTime}</TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ padding: 0 }} colSpan={4}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
+        <TableCell component="th" scope="row" sx={{ p: { xs: 1, sm: 1.5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Box
               sx={{
-                margin: 0,
-                backgroundColor: theme.palette.grey[50],
-                borderBottom: `1px solid ${theme.palette.divider}`
+                width: 12,
+                height: 12,
+                borderRadius: 1,
+                backgroundColor: project.color,
+                mr: 1.5,
+                flexShrink: 0
               }}
-            >
-              <Table size="small" sx={{ minWidth: 800 }}>
+            />
+            <Typography sx={{ fontWeight: 500 }}>
+              {project.name || 'No Project'}
+            </Typography>
+          </Box>
+        </TableCell>
+        <TableCell align="center" sx={{ p: { xs: 1, sm: 1.5 } }}>
+          {entries.length}
+        </TableCell>
+        <TableCell align="right" sx={{
+          fontWeight: 500,
+          color: theme.palette.primary.main,
+          p: { xs: 1, sm: 1.5 }
+        }}>
+          {formattedTime}
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell sx={{ p: 0 }} colSpan={4}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ py: 2, px: 3, backgroundColor: theme.palette.grey[50] }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                Time Entries ({entries.length})
+              </Typography>
+              <Table size="small" sx={{
+                mb: 2,
+                '& .MuiTableCell-root': {
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  py: 1.25
+                }
+              }}>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
-                    <TableCell sx={{ width: '120px', fontWeight: 'bold' }}>Date</TableCell>
-                    <TableCell sx={{ minWidth: '300px', fontWeight: 'bold' }}>Description</TableCell>
-                    <TableCell sx={{ width: '100px', fontWeight: 'bold' }}>Start Time</TableCell>
-                    <TableCell sx={{ width: '100px', fontWeight: 'bold' }}>End Time</TableCell>
-                    <TableCell sx={{ width: '120px', fontWeight: 'bold' }} align="right">Duration</TableCell>
+                  <TableRow sx={{ backgroundColor: 'rgba(25, 118, 210, 0.04)' }}>
+                    <TableCell sx={{ fontWeight: 500, fontSize: '0.875rem' }}>Description</TableCell>
+                    <TableCell sx={{ fontWeight: 500, fontSize: '0.875rem' }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 500, fontSize: '0.875rem' }}>Time</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>Duration</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {entries.map((entry) => (
-                    <TableRow
-                      key={entry.id}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: theme.palette.grey[100]
-                        },
-                        transition: 'background-color 0.2s'
-                      }}
-                    >
-                      <TableCell>{format(new Date(entry.timeInterval.start), 'yyyy-MM-dd')}</TableCell>
-                      <TableCell sx={{
-                        maxWidth: '400px',
-                        whiteSpace: 'normal',
-                        wordWrap: 'break-word'
-                      }}>
-                        {entry.description || 'No Description'}
+                    <TableRow key={entry.id} hover>
+                      <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {entry.description || '-'}
                       </TableCell>
-                      <TableCell>{format(new Date(entry.timeInterval.start), 'HH:mm')}</TableCell>
-                      <TableCell>{format(new Date(entry.timeInterval.end), 'HH:mm')}</TableCell>
-                      <TableCell align="right">
+                      <TableCell>
+                        {format(new Date(entry.timeInterval.start), 'MMM d, yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(entry.timeInterval.start), 'h:mm a')} - {format(new Date(entry.timeInterval.end), 'h:mm a')}
+                      </TableCell>
+                      <TableCell align="right" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                         {formatMillisecondsToTime(entry.duration)}
                       </TableCell>
                     </TableRow>
@@ -205,7 +207,19 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
           p: 4,
           textAlign: 'center',
           backgroundColor: theme.palette.background.paper,
-          borderRadius: 2
+          borderRadius: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '150px',
+            height: '150px',
+            background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+            zIndex: 0,
+          }
         }}
       >
         <Box sx={{
@@ -214,10 +228,12 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
           justifyContent: 'center',
           alignItems: 'center',
           height: '200px',
-          gap: 2
+          gap: 2,
+          position: 'relative',
+          zIndex: 1
         }}>
           <CircularProgress size={40} />
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
             Loading time entries...
           </Typography>
         </Box>
@@ -228,15 +244,40 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
   if (!timeEntries.length) {
     return (
       <Paper
+        elevation={2}
         sx={{
           p: 4,
           textAlign: 'center',
-          backgroundColor: theme.palette.grey[50]
+          backgroundColor: theme.palette.background.paper,
+          borderRadius: 2,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '150px',
+            height: '150px',
+            background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+            zIndex: 0,
+          }
         }}
       >
-        <Typography variant="h6" color="text.secondary">
-          No time entries found for the selected period.
-        </Typography>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px',
+          gap: 2,
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
+            No time entries found for the selected period.
+          </Typography>
+        </Box>
       </Paper>
     )
   }
@@ -306,7 +347,18 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
             zIndex: 1
           }}
         >
-          <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
+          <Typography variant="h6" sx={{
+            color: theme.palette.text.primary,
+            fontWeight: 600,
+            fontSize: '1rem',
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <ContentCopyIcon sx={{
+              fontSize: '1.25rem',
+              mr: 1.5,
+              color: theme.palette.primary.main
+            }} />
             Time Entries Details
           </Typography>
           <Stack

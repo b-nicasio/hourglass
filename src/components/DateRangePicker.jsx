@@ -1,10 +1,11 @@
 import React, { useEffect, forwardRef } from 'react'
-import { Paper, Button, Box, useTheme, CircularProgress } from '@mui/material'
+import { Paper, Button, Box, useTheme, CircularProgress, Typography, Divider } from '@mui/material'
 import ReactDatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { format } from 'date-fns'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import SearchIcon from '@mui/icons-material/Search'
+import DateRangeIcon from '@mui/icons-material/DateRange'
 
 // Custom styles for the date picker
 const datePickerCustomStyles = `
@@ -86,8 +87,9 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
       onClick={onClick}
       ref={ref}
       sx={{
-        width: '100%',
-        minWidth: { xs: '100%', sm: '180px' },
+        width: 'auto',
+        minWidth: '130px',
+        maxWidth: '140px',
         justifyContent: 'space-between',
         backgroundColor: 'white',
         '&:hover': {
@@ -96,6 +98,7 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
         textTransform: 'none',
         color: theme.palette.text.primary,
         borderRadius: 1,
+        px: 1.5
       }}
       endIcon={<CalendarTodayIcon />}
     >
@@ -106,12 +109,7 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
   return (
     <Paper
       sx={{
-        p: 3,
         mb: 3,
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
-        alignItems: { xs: 'stretch', sm: 'center' },
-        gap: { xs: 1.5, sm: 1 },
         backgroundColor: theme.palette.background.paper,
         boxShadow: theme.shadows[2],
         borderRadius: 2,
@@ -129,87 +127,164 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
         }
       }}
     >
+      {/* Header with title */}
       <Box
         sx={{
+          p: 2,
           display: 'flex',
-          gap: { xs: 1.5, sm: 1 },
-          flexDirection: { xs: 'column', sm: 'row' },
-          flex: 1,
+          alignItems: 'center',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           position: 'relative',
           zIndex: 1
         }}
       >
-        <Box sx={{ width: '100%', flex: 1 }}>
-          <ReactDatePicker
-            selected={dateRange.startDate}
-            onChange={(date) => setDateRange({ ...dateRange, startDate: date })}
-            selectsStart
-            startDate={dateRange.startDate}
-            endDate={dateRange.endDate}
-            dateFormat="MMM dd, yyyy"
-            placeholderText="Start Date"
-            customInput={<CustomInput />}
-            disabled={loading}
-            popperClassName="date-picker-popper"
-            popperModifiers={[
-              {
-                name: 'preventOverflow',
-                options: {
-                  mainAxis: true,
-                  altAxis: true
-                }
-              }
-            ]}
-          />
+        <DateRangeIcon sx={{ color: theme.palette.primary.main, mr: 1.5, fontSize: '1.25rem' }} />
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            fontSize: '1rem',
+            color: theme.palette.text.primary,
+            flex: 1
+          }}
+        >
+          Time Period Selection
+        </Typography>
+      </Box>
+
+      {/* Body with controls */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {/* Date picker section */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flex: { xs: 1, md: 'auto' },
+            width: 'auto',
+            maxWidth: { md: 'fit-content' }
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 500,
+              width: 'auto',
+              mr: 1.5,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Date Range:
+          </Typography>
+
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              width: 'auto'
+            }}
+          >
+            <Box sx={{ width: 'auto' }}>
+              <ReactDatePicker
+                selected={dateRange.startDate}
+                onChange={(date) => setDateRange({ ...dateRange, startDate: date })}
+                selectsStart
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+                dateFormat="MMM dd, yyyy"
+                placeholderText="Start Date"
+                customInput={<CustomInput />}
+                disabled={loading}
+                popperClassName="date-picker-popper"
+                popperModifiers={[
+                  {
+                    name: 'preventOverflow',
+                    options: {
+                      mainAxis: true,
+                      altAxis: true
+                    }
+                  }
+                ]}
+              />
+            </Box>
+
+            <Typography variant="body2" sx={{
+              color: theme.palette.text.secondary,
+              mx: 0.5,
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap'
+            }}>to</Typography>
+
+            <Box sx={{ width: 'auto' }}>
+              <ReactDatePicker
+                selected={dateRange.endDate}
+                onChange={(date) => setDateRange({ ...dateRange, endDate: date })}
+                selectsEnd
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+                minDate={dateRange.startDate}
+                dateFormat="MMM dd, yyyy"
+                placeholderText="End Date"
+                customInput={<CustomInput />}
+                disabled={loading}
+                popperClassName="date-picker-popper"
+                popperModifiers={[
+                  {
+                    name: 'preventOverflow',
+                    options: {
+                      mainAxis: true,
+                      altAxis: true
+                    }
+                  }
+                ]}
+              />
+            </Box>
+          </Box>
         </Box>
-        <Box sx={{ width: '100%', flex: 1 }}>
-          <ReactDatePicker
-            selected={dateRange.endDate}
-            onChange={(date) => setDateRange({ ...dateRange, endDate: date })}
-            selectsEnd
-            startDate={dateRange.startDate}
-            endDate={dateRange.endDate}
-            minDate={dateRange.startDate}
-            dateFormat="MMM dd, yyyy"
-            placeholderText="End Date"
-            customInput={<CustomInput />}
+
+        {/* Vertical divider for larger screens */}
+        <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' } }} />
+
+        {/* Horizontal divider for mobile */}
+        <Divider sx={{ display: { xs: 'block', md: 'none' } }} />
+
+        {/* Fetch button section */}
+        <Box sx={{ display: 'flex', justifyContent: { xs: 'flex-end', md: 'center' } }}>
+          <Button
+            variant="contained"
+            onClick={handleFetch}
             disabled={loading}
-            popperClassName="date-picker-popper"
-            popperModifiers={[
-              {
-                name: 'preventOverflow',
-                options: {
-                  mainAxis: true,
-                  altAxis: true
-                }
-              }
-            ]}
-          />
+            sx={{
+              minWidth: { xs: '100%', md: '180px' },
+              textTransform: 'none',
+              fontSize: '0.95rem',
+              py: 1.25,
+              borderRadius: 1,
+              background: loading ? theme.palette.primary.main : 'linear-gradient(135deg, #47a9ff 0%, #0071e3 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0071e3 0%, #005bb8 100%)',
+              },
+              position: 'relative',
+              zIndex: 1,
+              boxShadow: '0px 2px 6px rgba(0, 113, 227, 0.2)',
+            }}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
+          >
+            {loading ? 'Loading...' : 'Fetch Time Entries'}
+          </Button>
         </Box>
       </Box>
-      <Button
-        variant="contained"
-        onClick={handleFetch}
-        disabled={loading}
-        sx={{
-          height: '100%',
-          minWidth: { xs: '100%', sm: '200px' },
-          textTransform: 'none',
-          fontSize: '1rem',
-          py: 1.5,
-          borderRadius: 1,
-          background: loading ? theme.palette.primary.main : 'linear-gradient(135deg, #47a9ff 0%, #0071e3 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #0071e3 0%, #005bb8 100%)',
-          },
-          position: 'relative',
-          zIndex: 1,
-          boxShadow: '0px 2px 6px rgba(0, 113, 227, 0.2)',
-        }}
-        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
-      >
-        {loading ? 'Loading...' : 'Fetch Time Entries'}
-      </Button>
     </Paper>
   )
 }
