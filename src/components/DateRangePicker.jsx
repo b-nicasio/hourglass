@@ -11,14 +11,24 @@ const datePickerCustomStyles = `
   .react-datepicker {
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
     border: none;
-    border-radius: 8px;
+    border-radius: 2px;
     box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10000 !important;
+  }
+  .react-datepicker-popper {
+    z-index: 10000 !important;
+  }
+  .react-datepicker-wrapper {
+    display: inline-block;
+    width: 100%;
   }
   .react-datepicker__header {
     background-color: #1976d2;
     border-bottom: none;
-    border-radius: 8px 8px 0 0;
+    border-radius: 2px 2px 0 0;
     padding-top: 12px;
+    position: relative;
   }
   .react-datepicker__current-month {
     color: white;
@@ -30,7 +40,7 @@ const datePickerCustomStyles = `
   }
   .react-datepicker__day--selected {
     background-color: #1976d2;
-    border-radius: 50%;
+    border-radius: 2px;
   }
   .react-datepicker__day--in-range {
     background-color: #1976d215;
@@ -39,7 +49,7 @@ const datePickerCustomStyles = `
     background-color: #1976d230;
   }
   .react-datepicker__day:hover {
-    border-radius: 50%;
+    border-radius: 2px;
   }
   .react-datepicker__navigation {
     top: 12px;
@@ -49,7 +59,7 @@ const datePickerCustomStyles = `
   }
   .react-datepicker__day--keyboard-selected {
     background-color: #1976d2;
-    border-radius: 50%;
+    border-radius: 2px;
   }
 `
 
@@ -76,7 +86,8 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
       onClick={onClick}
       ref={ref}
       sx={{
-        minWidth: '200px',
+        width: '100%',
+        minWidth: { xs: '100%', sm: '180px' },
         justifyContent: 'space-between',
         backgroundColor: 'white',
         '&:hover': {
@@ -84,6 +95,7 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
         },
         textTransform: 'none',
         color: theme.palette.text.primary,
+        borderRadius: 1,
       }}
       endIcon={<CalendarTodayIcon />}
     >
@@ -99,42 +111,81 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'stretch', sm: 'center' },
-        gap: 2,
+        gap: { xs: 1.5, sm: 1 },
         backgroundColor: theme.palette.background.paper,
-        boxShadow: theme.shadows[2]
+        boxShadow: theme.shadows[2],
+        borderRadius: 2,
+        position: 'relative',
+        overflow: 'visible',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '150px',
+          height: '150px',
+          background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+          zIndex: 0,
+        }
       }}
     >
       <Box
         sx={{
           display: 'flex',
-          gap: 2,
+          gap: { xs: 1.5, sm: 1 },
           flexDirection: { xs: 'column', sm: 'row' },
-          flex: 1
+          flex: 1,
+          position: 'relative',
+          zIndex: 1
         }}
       >
-        <ReactDatePicker
-          selected={dateRange.startDate}
-          onChange={(date) => setDateRange({ ...dateRange, startDate: date })}
-          selectsStart
-          startDate={dateRange.startDate}
-          endDate={dateRange.endDate}
-          dateFormat="MMM dd, yyyy"
-          placeholderText="Start Date"
-          customInput={<CustomInput />}
-          disabled={loading}
-        />
-        <ReactDatePicker
-          selected={dateRange.endDate}
-          onChange={(date) => setDateRange({ ...dateRange, endDate: date })}
-          selectsEnd
-          startDate={dateRange.startDate}
-          endDate={dateRange.endDate}
-          minDate={dateRange.startDate}
-          dateFormat="MMM dd, yyyy"
-          placeholderText="End Date"
-          customInput={<CustomInput />}
-          disabled={loading}
-        />
+        <Box sx={{ width: '100%', flex: 1 }}>
+          <ReactDatePicker
+            selected={dateRange.startDate}
+            onChange={(date) => setDateRange({ ...dateRange, startDate: date })}
+            selectsStart
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            dateFormat="MMM dd, yyyy"
+            placeholderText="Start Date"
+            customInput={<CustomInput />}
+            disabled={loading}
+            popperClassName="date-picker-popper"
+            popperModifiers={[
+              {
+                name: 'preventOverflow',
+                options: {
+                  mainAxis: true,
+                  altAxis: true
+                }
+              }
+            ]}
+          />
+        </Box>
+        <Box sx={{ width: '100%', flex: 1 }}>
+          <ReactDatePicker
+            selected={dateRange.endDate}
+            onChange={(date) => setDateRange({ ...dateRange, endDate: date })}
+            selectsEnd
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            minDate={dateRange.startDate}
+            dateFormat="MMM dd, yyyy"
+            placeholderText="End Date"
+            customInput={<CustomInput />}
+            disabled={loading}
+            popperClassName="date-picker-popper"
+            popperModifiers={[
+              {
+                name: 'preventOverflow',
+                options: {
+                  mainAxis: true,
+                  altAxis: true
+                }
+              }
+            ]}
+          />
+        </Box>
       </Box>
       <Button
         variant="contained"
@@ -146,10 +197,14 @@ function DateRangePicker({ dateRange, setDateRange, onFetch, loading }) {
           textTransform: 'none',
           fontSize: '1rem',
           py: 1.5,
-          backgroundColor: theme.palette.primary.main,
+          borderRadius: 1,
+          background: loading ? theme.palette.primary.main : 'linear-gradient(135deg, #47a9ff 0%, #0071e3 100%)',
           '&:hover': {
-            backgroundColor: theme.palette.primary.dark,
+            background: 'linear-gradient(135deg, #0071e3 0%, #005bb8 100%)',
           },
+          position: 'relative',
+          zIndex: 1,
+          boxShadow: '0px 2px 6px rgba(0, 113, 227, 0.2)',
         }}
         startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
       >

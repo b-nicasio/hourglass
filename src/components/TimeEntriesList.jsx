@@ -250,24 +250,25 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
           startIcon={showGraphs ? <VisibilityOffIcon /> : <VisibilityIcon />}
           onClick={() => setShowGraphs(!showGraphs)}
           sx={{
-            color: theme.palette.text.secondary,
             borderColor: theme.palette.divider,
+            color: theme.palette.text.primary,
+            borderRadius: 1,
             '&:hover': {
-              borderColor: theme.palette.text.secondary,
-              backgroundColor: theme.palette.action.hover,
-            }
+              borderColor: theme.palette.primary.main,
+              backgroundColor: 'rgba(25, 118, 210, 0.04)',
+            },
           }}
         >
-          {showGraphs ? 'Hide Graphs' : 'Show Graphs'}
+          {showGraphs ? 'Hide Charts' : 'Show Charts'}
         </Button>
       </Box>
 
-      <Collapse in={showGraphs} timeout="auto">
-        <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4, minHeight: showGraphs ? '600px' : '0px' }}>
-          <Grid item xs={12} md={12} lg={6} xl={6} sx={{ height: '500px' }}>
+      <Collapse in={showGraphs} timeout={300}>
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          <Grid item xs={12} md={12} lg={6} xl={6} sx={{ height: '500px', pb: 3 }}>
             <DailyHoursChart timeEntries={timeEntries} />
           </Grid>
-          <Grid item xs={12} md={12} lg={6} xl={6} sx={{ height: '500px' }}>
+          <Grid item xs={12} md={12} lg={6} xl={6} sx={{ height: '500px', pb: 3 }}>
             <ProjectDistributionChart timeEntries={timeEntries} />
           </Grid>
         </Grid>
@@ -278,7 +279,18 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
           backgroundColor: theme.palette.background.paper,
           borderRadius: 2,
           boxShadow: theme.shadows[2],
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '150px',
+            height: '150px',
+            background: 'radial-gradient(circle, rgba(25,118,210,0.05) 0%, rgba(25,118,210,0) 70%)',
+            zIndex: 0,
+          }
         }}
       >
         <Box
@@ -289,7 +301,9 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
             flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
             alignItems: { xs: 'stretch', sm: 'center' },
-            gap: { xs: 1.5, sm: 2 }
+            gap: { xs: 1.5, sm: 2 },
+            position: 'relative',
+            zIndex: 1
           }}
         >
           <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>
@@ -314,7 +328,8 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
                 fontWeight: 500,
                 fontSize: { xs: '0.875rem', sm: '0.9375rem' },
                 minWidth: { xs: '100%', sm: '160px' },
-                py: { xs: 1, sm: 1.25 }
+                py: { xs: 1, sm: 1.25 },
+                borderRadius: 1
               }}
             >
               Copy Project Times
@@ -358,7 +373,13 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
                 fontWeight: 500,
                 fontSize: { xs: '0.875rem', sm: '0.9375rem' },
                 minWidth: { xs: '100%', sm: '200px' },
-                py: { xs: 1, sm: 1.25 }
+                py: { xs: 1, sm: 1.25 },
+                borderRadius: 1,
+                background: downloading ? theme.palette.primary.main : 'linear-gradient(135deg, #47a9ff 0%, #0071e3 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #0071e3 0%, #005bb8 100%)',
+                },
+                boxShadow: '0px 2px 6px rgba(0, 113, 227, 0.2)',
               }}
             >
               {downloading ? 'Generating PDF...' : 'Download Clockify PDF Report'}
