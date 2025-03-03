@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { Container, CssBaseline, Box, Typography, Alert, Grid, IconButton, Tooltip, Button, Paper, TextField, Divider, CircularProgress } from '@mui/material'
+import { Container, CssBaseline, Box, Typography, Alert, Grid, IconButton, Tooltip, Button, Paper, TextField, Divider, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
 import DateRangePicker from './components/DateRangePicker'
 import TimeEntriesList from './components/TimeEntriesList'
 import TimeStats from './components/TimeStats'
@@ -240,6 +240,7 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [userInfo, setUserInfo] = useState(null)
   const [workspace, setWorkspace] = useState(null)
+  const [workspaces, setWorkspaces] = useState([])
   const [_projects, _setProjects] = useState([])
   const [timeEntries, setTimeEntries] = useState([])
   const [billableDays, setBillableDays] = useState(0)
@@ -261,6 +262,7 @@ function App() {
       setInitialLoading(true);
       const savedApiKey = localStorage.getItem('apiKey');
       const savedProfile = localStorage.getItem('hourglassProfile');
+      const savedWorkspaceId = localStorage.getItem('selectedWorkspaceId');
 
       // Process API key and profile together to avoid multiple re-renders
       if (savedApiKey) {
@@ -269,9 +271,9 @@ function App() {
         try {
           setError(null);
           // Perform API calls in parallel
-          const [user, ws] = await Promise.all([
+          const [user, allWorkspaces] = await Promise.all([
             timeTrackingService.getUserInfo(savedApiKey),
-            timeTrackingService.getWorkspace(savedApiKey)
+            timeTrackingService.getWorkspaces(savedApiKey)
           ]);
 
           // Set userAuth for API calls
@@ -282,7 +284,24 @@ function App() {
 
           // Set userInfo for display
           setUserInfo(user);
-          setWorkspace(ws);
+          
+          // Store all workspaces
+          setWorkspaces(allWorkspaces);
+          
+          // Set the selected workspace
+          if (savedWorkspaceId && allWorkspaces.length > 0) {
+            // Find the saved workspace in the list
+            const savedWorkspace = allWorkspaces.find(ws => ws.id === savedWorkspaceId);
+            if (savedWorkspace) {
+              setWorkspace(savedWorkspace);
+            } else {
+              // Fallback to the first workspace if saved one not found
+              setWorkspace(allWorkspaces[0]);
+            }
+          } else if (allWorkspaces.length > 0) {
+            // Default to first workspace if none saved
+            setWorkspace(allWorkspaces[0]);
+          }
 
           // Set profile if available
           if (savedProfile) {
@@ -299,6 +318,7 @@ function App() {
           setUserAuth(null);
           setUserInfo(null);
           setWorkspace(null);
+          setWorkspaces([]);
           setProfile(null);
 
           // Show profile dialog only if API key is invalid
@@ -332,9 +352,9 @@ function App() {
     try {
       setError(null);
       // Execute API calls in parallel
-      const [user, ws] = await Promise.all([
+      const [user, allWorkspaces] = await Promise.all([
         timeTrackingService.getUserInfo(newApiKey),
-        timeTrackingService.getWorkspace(newApiKey)
+        timeTrackingService.getWorkspaces(newApiKey)
       ]);
 
       // Update state only after both calls complete successfully
@@ -343,13 +363,36 @@ function App() {
         name: user.name
       });
       setUserInfo(user);
-      setWorkspace(ws);
+      setWorkspaces(allWorkspaces);
+      
+      // Select the first workspace by default
+      if (allWorkspaces.length > 0) {
+        setWorkspace(allWorkspaces[0]);
+      }
     } catch (error) {
       console.error('Initialization error:', error);
       setError('Failed to initialize app. Please check your API key.');
       setUserAuth(null);
       setUserInfo(null);
       setWorkspace(null);
+      setWorkspaces([]);
+    }
+  };
+
+  const handleWorkspaceChange = (event) => {
+    const selectedWorkspaceId = event.target.value;
+    const selectedWorkspace = workspaces.find(ws => ws.id === selectedWorkspaceId);
+    
+    if (selectedWorkspace) {
+      setWorkspace(selectedWorkspace);
+      localStorage.setItem('selectedWorkspaceId', selectedWorkspaceId);
+      
+      // Refresh time entries for the new workspace
+      if (dateRange) {
+        const startStr = format(dateRange.startDate, 'yyyy-MM-dd');
+        const endStr = format(dateRange.endDate, 'yyyy-MM-dd');
+        fetchTimeEntries(startStr, endStr);
+      }
     }
   };
 
@@ -358,8 +401,20 @@ function App() {
     if (apiKey && userInfo && workspace) {
       setError(null)
       try {
-        const ws = await timeTrackingService.getWorkspace(apiKey)
-        setWorkspace(ws)
+        // If we need to refresh workspaces
+        const allWorkspaces = await timeTrackingService.getWorkspaces(apiKey)
+        setWorkspaces(allWorkspaces)
+        
+        // Find the currently selected workspace in the updated list
+        if (workspace) {
+          const updatedWorkspace = allWorkspaces.find(ws => ws.id === workspace.id)
+          if (updatedWorkspace) {
+            setWorkspace(updatedWorkspace)
+          } else if (allWorkspaces.length > 0) {
+            setWorkspace(allWorkspaces[0])
+          }
+        }
+        
         localStorage.setItem('apiKey', apiKey)
         localStorage.setItem('hourglassProfile', JSON.stringify(userInfo))
       } catch (error) {
@@ -371,9 +426,11 @@ function App() {
 
   const handleResetApiKey = () => {
     localStorage.removeItem('apiKey')
+    localStorage.removeItem('selectedWorkspaceId')
     setApiKey('')
     setUserInfo(null)
     setWorkspace(null)
+    setWorkspaces([])
     setTimeEntries([])
     setProfile(null)
   }
@@ -555,6 +612,8 @@ function App() {
             <Header
               userInfo={userInfo}
               workspace={workspace}
+              workspaces={workspaces}
+              onWorkspaceChange={handleWorkspaceChange}
               onProfileClick={() => setShowProfile(true)}
             />
           </Box>
