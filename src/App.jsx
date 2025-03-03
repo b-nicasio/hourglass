@@ -367,8 +367,41 @@ function App() {
     }
 
     try {
-      const startStr = format(startDate, 'yyyy-MM-dd')
-      const endStr = format(endDate, 'yyyy-MM-dd')
+      // Ensure we have valid dates
+      let startStr, endStr;
+
+      try {
+        // Check if startDate is a string or Date object
+        if (typeof startDate === 'string') {
+          // If it's already a string in the format yyyy-MM-dd, use it directly
+          startStr = startDate;
+        } else {
+          // Otherwise format it
+          const startDateObj = new Date(startDate);
+          if (isNaN(startDateObj.getTime())) {
+            throw new Error('Invalid start date');
+          }
+          startStr = format(startDateObj, 'yyyy-MM-dd');
+        }
+
+        // Check if endDate is a string or Date object
+        if (typeof endDate === 'string') {
+          // If it's already a string in the format yyyy-MM-dd, use it directly
+          endStr = endDate;
+        } else {
+          // Otherwise format it
+          const endDateObj = new Date(endDate);
+          if (isNaN(endDateObj.getTime())) {
+            throw new Error('Invalid end date');
+          }
+          endStr = format(endDateObj, 'yyyy-MM-dd');
+        }
+      } catch (error) {
+        console.error('Error formatting dates:', error);
+        setError('Invalid date range. Please select valid dates.');
+        return;
+      }
+
       await timeTrackingService.downloadReport(
         workspace.id,
         userInfo.id,
@@ -378,9 +411,9 @@ function App() {
         periodName,
         apiKey
       )
-    } catch (err) {
-      setError('Failed to download report. Please try again.')
-      console.error('Error downloading report:', err)
+    } catch (error) {
+      console.error('Error downloading report:', error)
+      setError(`Error downloading report: ${error.message || 'Unknown error'}`)
     }
   }
 

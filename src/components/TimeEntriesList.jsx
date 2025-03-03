@@ -307,10 +307,31 @@ function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, se
               size="medium"
               startIcon={<FileDownloadIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
               onClick={() => {
-                const startStr = format(dateRange.startDate, 'yyyy-MM-dd')
-                const endStr = format(dateRange.endDate, 'yyyy-MM-dd')
-                const periodName = `${selectedMonth} ${BILLING_YEAR}`
-                onDownloadReport(startStr, endStr, periodName)
+                try {
+                  // Ensure we have valid dates
+                  if (!dateRange || !dateRange.startDate || !dateRange.endDate) {
+                    console.error('Invalid date range');
+                    return;
+                  }
+
+                  // Safely format dates
+                  const startDate = new Date(dateRange.startDate);
+                  const endDate = new Date(dateRange.endDate);
+
+                  // Validate dates
+                  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                    console.error('Invalid date objects');
+                    return;
+                  }
+
+                  const startStr = format(startDate, 'yyyy-MM-dd');
+                  const endStr = format(endDate, 'yyyy-MM-dd');
+                  const periodName = `${selectedMonth || 'Custom Period'} ${BILLING_YEAR || new Date().getFullYear()}`;
+
+                  onDownloadReport(startStr, endStr, periodName);
+                } catch (error) {
+                  console.error('Error preparing PDF download:', error);
+                }
               }}
               sx={{
                 fontWeight: 500,
