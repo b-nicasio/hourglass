@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { Container, CssBaseline, Box, Typography, Alert, Grid, IconButton, Tooltip, Button, Paper, TextField, Divider, CircularProgress } from '@mui/material'
 import DateRangePicker from './components/DateRangePicker'
@@ -237,7 +237,7 @@ const theme = createTheme({
 })
 
 function App() {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('apiKey') || '')
+  const [apiKey, setApiKey] = useState('')
   const [userInfo, setUserInfo] = useState(null)
   const [workspace, setWorkspace] = useState(null)
   const [_projects, _setProjects] = useState([])
@@ -255,31 +255,6 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [profile, setProfile] = useState(null)
   const [userAuth, setUserAuth] = useState(null)
-
-  const fetchTimeEntries = useCallback(async (startStr, endStr) => {
-    if (!apiKey || !userAuth || !workspace) {
-      setError('Please set up your API key and workspace first')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-    try {
-      const entries = await timeTrackingService.getTimeEntries(
-        workspace.id,
-        userAuth.id,
-        startStr,
-        endStr,
-        apiKey
-      )
-      setTimeEntries(entries)
-    } catch (error) {
-      setError('Failed to fetch time entries. Please try again.')
-      console.error('Error fetching time entries:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [apiKey, userAuth, workspace, setError, setLoading, setTimeEntries])
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -345,7 +320,7 @@ function App() {
       const endStr = format(dateRange.endDate, 'yyyy-MM-dd')
       fetchTimeEntries(startStr, endStr)
     }
-  }, [apiKey, dateRange, userAuth, workspace, fetchTimeEntries])
+  }, [apiKey, dateRange, userAuth, workspace])
 
   const handleApiKeySubmit = async (newApiKey) => {
     if (!newApiKey) return;
@@ -402,6 +377,31 @@ function App() {
     setTimeEntries([])
     setProfile(null)
   }
+
+  const fetchTimeEntries = async (startStr, endStr) => {
+    if (!apiKey || !userAuth || !workspace) {
+      setError('Please set up your API key and workspace first');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const entries = await timeTrackingService.getTimeEntries(
+        workspace.id,
+        userAuth.id,
+        startStr,
+        endStr,
+        apiKey
+      );
+      setTimeEntries(entries);
+    } catch (error) {
+      setError('Failed to fetch time entries. Please try again.');
+      console.error('Error fetching time entries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleProfileClose = (updatedProfile) => {
     // Only update profile information, not authentication info

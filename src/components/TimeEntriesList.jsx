@@ -154,6 +154,7 @@ function ProjectRow({ project, entries }) {
 }
 
 function TimeEntriesList({ timeEntries, loading, dateRange, onDownloadReport, selectedMonth }) {
+  const [openStates, setOpenStates] = useState({})
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [showGraphs, setShowGraphs] = useState(true)
   const [downloading, setDownloading] = useState(false)
