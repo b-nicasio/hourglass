@@ -8,15 +8,19 @@ import {
   Tooltip,
   useTheme,
   Button,
-  Link
+  Link,
+  Select,
+  MenuItem,
+  FormControl
 } from '@mui/material'
 import PersonIcon from '@mui/icons-material/Person'
 import WorkspacesIcon from '@mui/icons-material/Workspaces'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 
-function Header({ userInfo, workspace, onProfileClick }) {
+function Header({ userInfo, workspace, workspaces = [], onWorkspaceChange, onProfileClick }) {
   const theme = useTheme()
+  const hasMultipleWorkspaces = workspaces.length > 1
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -213,44 +217,123 @@ function Header({ userInfo, workspace, onProfileClick }) {
                 >
                   Workspace
                 </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    py: 1,
-                    px: 1.5,
-                    background: 'linear-gradient(135deg, #5e5ce6 0%, #4A48B9 100%)',
-                    borderRadius: 1,
-                    color: 'white',
-                    boxShadow: '0px 2px 6px rgba(94, 92, 230, 0.2)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(to bottom right, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%)',
-                    }
-                  }}
-                >
-                  <WorkspacesIcon sx={{ fontSize: 18 }} />
-                  <Typography
+                {!hasMultipleWorkspaces ? (
+                  <Box
                     sx={{
-                      fontWeight: 500,
-                      fontSize: '0.875rem',
-                      maxWidth: '110px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      py: 1,
+                      px: 1.5,
+                      background: 'linear-gradient(135deg, #5e5ce6 0%, #4A48B9 100%)',
+                      borderRadius: 1,
+                      color: 'white',
+                      boxShadow: '0px 2px 6px rgba(94, 92, 230, 0.2)',
+                      position: 'relative',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(to bottom right, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%)',
+                      }
                     }}
                   >
-                    {workspace?.name || 'Loading...'}
-                  </Typography>
-                </Box>
+                    <WorkspacesIcon sx={{ fontSize: 18 }} />
+                    <Typography
+                      sx={{
+                        fontWeight: 500,
+                        fontSize: '0.875rem',
+                        maxWidth: '110px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {workspace?.name || 'Loading...'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <FormControl 
+                    fullWidth
+                    size="small"
+                    sx={{
+                      '.MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        color: 'white',
+                        background: 'linear-gradient(135deg, #5e5ce6 0%, #4A48B9 100%)',
+                        boxShadow: '0px 2px 6px rgba(94, 92, 230, 0.2)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: 'linear-gradient(to bottom right, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%)',
+                          zIndex: 0
+                        },
+                      },
+                      '.MuiSelect-select': {
+                        paddingLeft: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        position: 'relative',
+                        zIndex: 1
+                      },
+                      '.MuiOutlinedInput-notchedOutline': {
+                        border: 'none'
+                      },
+                      '.MuiSvgIcon-root': {
+                        color: 'white'
+                      }
+                    }}
+                  >
+                    <Select
+                      value={workspace?.id || ''}
+                      onChange={onWorkspaceChange}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <WorkspacesIcon sx={{ fontSize: 18 }} />
+                          <Typography
+                            sx={{
+                              fontWeight: 500,
+                              fontSize: '0.875rem',
+                              maxWidth: '110px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {workspaces.find(ws => ws.id === selected)?.name || 'Loading...'}
+                          </Typography>
+                        </Box>
+                      )}
+                      inputProps={{
+                        MenuProps: {
+                          sx: {
+                            '& .MuiPaper-root': {
+                              borderRadius: 1,
+                              boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)'
+                            },
+                          }
+                        }
+                      }}
+                    >
+                      {workspaces.map((ws) => (
+                        <MenuItem key={ws.id} value={ws.id}>
+                          {ws.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
               </Box>
             </Box>
           </Box>

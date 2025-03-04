@@ -48,8 +48,13 @@ const getUserInfo = async (apiKey) => {
   return makeRequest('/user', apiKey)
 }
 
+const getWorkspaces = async (apiKey) => {
+  return makeRequest('/workspaces', apiKey)
+}
+
+// Keep this for backward compatibility 
 const getWorkspace = async (apiKey) => {
-  const workspaces = await makeRequest('/workspaces', apiKey)
+  const workspaces = await getWorkspaces(apiKey)
   return workspaces[0]
 }
 
@@ -759,6 +764,7 @@ const downloadReport = async (workspaceId, userId, startDate, endDate, userName,
 
 export default {
   getUserInfo,
+  getWorkspaces,
   getWorkspace,
   getTimeEntries,
   getProjects,
